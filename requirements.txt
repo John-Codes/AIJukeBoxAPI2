@@ -1,0 +1,8 @@
+openai
+python-dotenv
+pyaudio
+wave
+elevenlabs
+pymongo
+dnspython
+colorama
