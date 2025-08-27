@@ -5,6 +5,8 @@ from TTS import speak_text
 from STT import record_audio, transcribe_audio_with_elevenlabs
 from songpicker import SongPicker
 from custom_songpicker import CustomSongPicker
+from json_parser import JSONResponseParser
+from static_messages import StaticMessages
 import re
 
 from colorama import init, Fore, Style
@@ -27,47 +29,11 @@ class JukeboxJokeTeller:
         self.llm_client = LLMClient()
         self.song_picker = SongPicker()
         self.custom_song_picker = CustomSongPicker()
+        self.json_parser = JSONResponseParser(self.llm_client)
+        self.static_msgs = StaticMessages()
         self.joke_count = 0
         self.offer_frequency = 3  # Make an offer every 3 jokes
     
-    def _parse_json_response(self, response_text, clean_prompt=None):
-        """
-        Helper method to parse JSON response with optional cleaning.
-        
-        Args:
-            response_text (str): The response text to parse
-            clean_prompt (str, optional): Prompt to clean the response if needed
-            
-        Returns:
-            dict: Parsed JSON result or None if parsing fails
-        """
-        import json
-        try:
-            # Remove Markdown formatting
-            cleaned_response = re.sub(r"```json|```", "", response_text).strip()
-            
-            # Try to parse the response as JSON
-            result = json.loads(cleaned_response)
-            
-            # Ensure all required keys are present
-            if all(key in result for key in ["relevant", "type", "confidence"]):
-                return result
-        except:
-            pass  # Continue to cleaning attempt if provided
-        
-        # If parsing failed and we have a clean prompt, try cleaning
-        if clean_prompt:
-            try:
-                clean_response = self.llm_client.call_llm(clean_prompt + response_text)
-                print(Fore.YELLOW + "Cleaned JSON response:" + Style.RESET_ALL, clean_response)
-                
-                result = json.loads(clean_response)
-                if all(key in result for key in ["relevant", "type", "confidence"]):
-                    return result
-            except:
-                pass  # Will return None to indicate failure
-        
-        return None  # Indicates parsing failed
     
     def validate_user_request(self, user_input):
         """
@@ -107,7 +73,7 @@ class JukeboxJokeTeller:
             print(Fore.CYAN + "LLM Response:" + Style.RESET_ALL, response)
 
             # Try to parse the response
-            result = self._parse_json_response(response, CleanJsonPrompt)
+            result = self.json_parser.parse_json_response(response, CleanJsonPrompt)
             
             # Return parsed result or default response
             return result if result else {
@@ -175,7 +141,7 @@ class JukeboxJokeTeller:
         4. Roasts the absurdity of modern life, work, or social expectations
         
        
-        Generate an original joke following this style:
+        Generate an original joke following this style do not add comments make it one sentence long no commenting before or after just a one liner joke.
         """
         
         try:
@@ -192,16 +158,15 @@ class JukeboxJokeTeller:
         """
         Make an offer to play songs or make custom songs.
         """
-        offer_text = "I can play songs for you or make a song for your loved ones or yourself for just $1 each."
-        speak_text(offer_text)
-        print(f"Offer: {offer_text}")
+        self.static_msgs.play_static_message("offer")
+        print("Offer: I can play songs for you or make a song for your loved ones or yourself for just $1 each.")
     
     def run(self):
         """
         Main loop that alternates between listening and telling jokes in the same thread.
         """
         print("Jukebox Joke Teller started! Enjoy the humor...")
-        speak_text("Welcome to the crooked Jukebox! Prepare for some crazy shit!")
+        self.static_msgs.play_static_message("welcome")
         
         # Initial offer
         self.offer()
@@ -244,7 +209,7 @@ class JukeboxJokeTeller:
                     continue
             except Exception as e:
                 print(f"Error in main loop: {e}")
-                speak_text("Oops, something went wrong with the joke loop. Let me try to recover...")
+                self.static_msgs.play_static_message("try_again")
                 time.sleep(5)  # Wait before continuing
 
 if __name__ == "__main__":

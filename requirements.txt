@@ -6,3 +6,4 @@ elevenlabs
 pymongo
 dnspython
 colorama
+soundfile

@@ -1,10 +1,12 @@
-import json
 import sys
 import os
+import json
 from LLM import LLMClient
 from STT import record_audio, transcribe_audio_with_elevenlabs
 from TTS import speak_text
 from mongodb_handler import MongoDBHandler
+from json_parser import JSONResponseParser
+from static_messages import StaticMessages
 
 class SongPicker:
     def __init__(self):
@@ -12,6 +14,8 @@ class SongPicker:
         Initialize the SongPicker with an LLM client.
         """
         self.llm_client = LLMClient()
+        self.json_parser = JSONResponseParser(self.llm_client)
+        self.static_msgs = StaticMessages()
     
     def evaluate_song(self, song_choice):
         """
@@ -48,32 +52,19 @@ class SongPicker:
         try:
             response = self.llm_client.call_llm(prompt)
             print("LLM Response:", response)
-            # Try to parse the response as JSON
-            try:
-                cleanresponse =self.llm_client.call_llm(CleanJsonPrompt+response)
-                print("Cleaned LLM Response:", cleanresponse)
-                result = json.loads(cleanresponse)
-                # Ensure all required keys are present
-                if all(key in result for key in ["acceptable", "roast"]):
-                    return result
-                else:
-                    # If JSON doesn't have required structure, create a default response
-                    return {
-                        "acceptable": False,
-                        "roast": "Even your song choice is basic. Try again, normie."
-                    }
-            except json.JSONDecodeError:
-                # If response isn't valid JSON, create a default response
-                return {
-                    "acceptable": False,
-                    "description": "LLM response wasn't in expected JSON format",
-                    "roast": f"Is '{song_choice}' supposed to be music or just noise? Try again."
-                }
+            
+            # Use JSONResponseParser to parse the response
+            result = self.json_parser.parse_song_picker_json(response, CleanJsonPrompt)
+            
+            # Return parsed result or default response
+            return result if result else {
+                "acceptable": False,
+                "roast": "Even your song choice is basic. Try again, normie."
+            }
         except Exception as e:
             # Handle any other errors
             return {
                 "acceptable": False,
-                
                 "roast": f"Nice try, but I can't even process your song choice: {str(e)}"
             }
     
@@ -85,11 +76,11 @@ class SongPicker:
             dict: Final JSON response when an acceptable song is selected
         """
         print("Welcome to the AI Jukebox! Pick a song and prepare to be roasted!")
-        speak_text("Welcome to the AI Jukebox! Pick a song and prepare to be roasted!")
+        self.static_msgs.play_static_message("roast_intro")
         
         while True:
             print("\nPlease say your song choice...")
-            speak_text("Please say your song choice...")
+            self.static_msgs.play_static_message("song_choice_prompt")
             
             # Record audio from microphone (5 seconds)
             audio_filename = record_audio(record_seconds=5)
@@ -102,12 +93,12 @@ class SongPicker:
             
             if song_choice.lower() == 'quit':
                 print("Giving up already? Typical.")
-                speak_text("Giving up already? Typical.")
+                self.static_msgs.play_static_message("try_again")
                 sys.exit(0)
             
             if not song_choice:
                 print("Silence isn't a song, genius. Try again.")
-                speak_text("Silence isn't a song, genius. Try again.")
+                self.static_msgs.play_static_message("try_again")
                 continue
             
             # Evaluate the song choice
@@ -122,11 +113,11 @@ class SongPicker:
             # Check if the song is acceptable
             if result['acceptable']:
                 print("\nFinally! You picked an acceptable song.")
-                speak_text("Finally! You picked an acceptable song.")
+                self.static_msgs.play_static_message("acceptable_song")
                 return result,song_choice
             else:
                 print("Try again, oh master of terrible music choices.")
-                speak_text("Try again, oh master of terrible music choices.")
+                self.static_msgs.play_static_message("try_again")
 
 if __name__ == "__main__":
     # Create an instance of SongPicker and run it
