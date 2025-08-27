@@ -7,6 +7,7 @@ from TTS import speak_text
 from mongodb_handler import MongoDBHandler
 from json_parser import JSONResponseParser
 from static_messages import StaticMessages
+from confirmation import Confirmation
 
 class SongPicker:
     def __init__(self):
@@ -75,7 +76,6 @@ class SongPicker:
         Returns:
             dict: Final JSON response when an acceptable song is selected
         """
-        print("Welcome to the AI Jukebox! Pick a song and prepare to be roasted!")
         self.static_msgs.play_static_message("roast_intro")
         
         while True:
@@ -92,12 +92,12 @@ class SongPicker:
             print(f"You said: {song_choice}")
             
             if song_choice.lower() == 'quit':
-                print("Giving up already? Typical.")
+                self.static_msgs.play_static_message("giving_up")
                 self.static_msgs.play_static_message("try_again")
                 sys.exit(0)
             
             if not song_choice:
-                print("Silence isn't a song, genius. Try again.")
+                self.static_msgs.play_static_message("silence_not_song")
                 self.static_msgs.play_static_message("try_again")
                 continue
             
@@ -114,7 +114,22 @@ class SongPicker:
             if result['acceptable']:
                 print("\nFinally! You picked an acceptable song.")
                 self.static_msgs.play_static_message("acceptable_song")
-                return result,song_choice
+                
+                # Ask for confirmation
+                confirmation = Confirmation()
+                action = confirmation.confirm_song_choice(song_choice)
+                
+                if action == "confirmed":
+                    print("Song confirmed!")
+                    return result, song_choice
+                elif action == "change_song":
+                    print("Let's pick a different song.")
+                    self.static_msgs.play_static_message("try_again")
+                    continue
+                elif action == "cancel":
+                    print("Song selection cancelled.")
+                    self.static_msgs.play_static_message("try_again")
+                    return None, None
             else:
                 print("Try again, oh master of terrible music choices.")
                 self.static_msgs.play_static_message("try_again")

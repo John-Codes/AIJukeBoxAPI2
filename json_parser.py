@@ -49,6 +49,63 @@ class JSONResponseParser:
         
         return None  # Indicates parsing failed
     
+    def parse_confirmation_json(self, response_text, clean_prompt=None):
+        """
+        Parse and validate JSON response for song confirmation with required keys.
+        
+        Required keys:
+        - "confirmed" (boolean): Whether the user wants to confirm their song choice
+        - "change_song" (boolean): Whether the user wants to select a different song
+        - "cancel" (boolean): Whether the user wants to cancel the song selection
+        - "confidence" (string): Confidence level ("high", "medium", "low")
+        
+        Args:
+            response_text (str): The response text to parse
+            clean_prompt (str, optional): Prompt to clean the response if needed
+            
+        Returns:
+            dict: Parsed JSON result with all required keys or None if parsing fails
+        """
+        # Define required keys for confirmation
+        required_keys = ["confirmed", "change_song", "cancel", "confidence"]
+        
+        try:
+            # Remove Markdown formatting
+            cleaned_response = re.sub(r"```json|```", "", response_text).strip()
+            
+            # Try to parse the response as JSON
+            result = json.loads(cleaned_response)
+            
+            # Validate required keys and their types
+            if (all(key in result for key in required_keys) and
+                isinstance(result["confirmed"], bool) and
+                isinstance(result["change_song"], bool) and
+                isinstance(result["cancel"], bool) and
+                isinstance(result["confidence"], str) and
+                result["confidence"] in ["high", "medium", "low"]):
+                return result
+        except:
+            pass  # Continue to cleaning attempt if provided
+        
+        # If parsing failed and we have a clean prompt, try cleaning
+        if clean_prompt:
+            try:
+                clean_response = self.llm_client.call_llm(clean_prompt + response_text)
+                print("\033[93mCleaned JSON response:\033[0m", clean_response)
+                
+                result = json.loads(clean_response)
+                if (all(key in result for key in required_keys) and
+                    isinstance(result["confirmed"], bool) and
+                    isinstance(result["change_song"], bool) and
+                    isinstance(result["cancel"], bool) and
+                    isinstance(result["confidence"], str) and
+                    result["confidence"] in ["high", "medium", "low"]):
+                    return result
+            except:
+                pass  # Will return None to indicate failure
+        
+        return None  # Indicates parsing failed
+    
     def parse_song_picker_json(self, response_text, clean_prompt=None):
         """
         Parse and validate JSON response for song picker with required keys.

@@ -112,13 +112,25 @@ class JukeboxJokeTeller:
                 
                 if validation["relevant"] and validation["confidence"] in ["high", "medium"]:
                     if validation["type"] == "play":
-                        speak_text("Great! Let's pick a song for you.")
+                        self.static_msgs.play_static_message("pick_song")
                         print(f"{SONG_COLOR}Going to song picker...{RESET_COLOR}")
-                        self.song_picker.pick_song()
+                        result, song_choice = self.song_picker.pick_song()
+                        if result is None and song_choice is None:
+                            print("Song selection was cancelled.")
+                            self.static_msgs.play_static_message("song_selection_cancelled")
+                        else:
+                            print("Song selected and confirmed!")
+                            self.static_msgs.play_static_message("song_selected_confirmed")
                     elif validation["type"] == "custom":
-                        speak_text("Awesome! Let's create a custom song for you.")
+                        self.static_msgs.play_static_message("create_custom_song")
                         print(f"{CUSTOM_SONG_COLOR}Going to custom song picker...{RESET_COLOR}")
-                        self.custom_song_picker.pick_song()
+                        result, song_details = self.custom_song_picker.pick_song()
+                        if result is None and song_details is None:
+                            print("Song selection was cancelled.")
+                            self.static_msgs.play_static_message("custom_song_selection_cancelled")
+                        else:
+                            print("Custom song selected and confirmed!")
+                            self.static_msgs.play_static_message("custom_song_selected_confirmed")
                 return True
             return False
         except Exception as e:
@@ -181,7 +193,7 @@ class JukeboxJokeTeller:
                 # # If user input was processed, continue to next iteration
                 # if user_input_processed:
                 #     continue
-
+                
                 # Tell a joke
                 joke = self.tell_joke()
                 print(f"Joke: {joke}")

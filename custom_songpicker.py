@@ -7,6 +7,7 @@ from TTS import speak_text
 from mongodb_handler import MongoDBHandler
 from json_parser import JSONResponseParser
 from static_messages import StaticMessages
+from confirmation import Confirmation
 
 class CustomSongPicker:
     def __init__(self):
@@ -89,12 +90,12 @@ class CustomSongPicker:
         print(f"Song name: {song_name}")
         
         if song_name.lower() == 'quit':
-            print("Giving up already? Typical.")
+            self.static_msgs.play_static_message("giving_up")
             self.static_msgs.play_static_message("try_again")
-            sys.exit(0)
+            return None
         
         if not song_name:
-            print("Silence isn't a song, genius. Let's try again.")
+            self.static_msgs.play_static_message("silence_not_song")
             self.static_msgs.play_static_message("try_again")
             return None
         
@@ -107,9 +108,9 @@ class CustomSongPicker:
         print(f"Genre: {genre}")
         
         if genre.lower() == 'quit':
-            print("Giving up already? Typical.")
+            self.static_msgs.play_static_message("giving_up")
             self.static_msgs.play_static_message("try_again")
-            sys.exit(0)
+            return None
         
         # Collect musical styles
         print("\nDescribe the musical styles of your song.")
@@ -120,9 +121,9 @@ class CustomSongPicker:
         print(f"Musical styles: {styles}")
         
         if styles.lower() == 'quit':
-            print("Giving up already? Typical.")
+            self.static_msgs.play_static_message("giving_up")
             self.static_msgs.play_static_message("try_again")
-            sys.exit(0)
+            return None
         
         # Collect lyrics description
         print("\nDescribe the lyrics of your song.")
@@ -133,9 +134,9 @@ class CustomSongPicker:
         print(f"Lyrics description: {lyrics_description}")
         
         if lyrics_description.lower() == 'quit':
-            print("Giving up already? Typical.")
+            self.static_msgs.play_static_message("giving_up")
             self.static_msgs.play_static_message("try_again")
-            sys.exit(0)
+            return None
         
         return {
             "song_name": song_name,
@@ -151,8 +152,8 @@ class CustomSongPicker:
         Returns:
             dict: Final JSON response when an acceptable song is selected
         """
-        print("Welcome to the AI Jukebox! Pick a song and prepare to be roasted!")
         self.static_msgs.play_static_message("roast_intro")
+        self.static_msgs.play_static_message("custom_song_prompt")
         
         while True:
             song_details = self.collect_song_details()
@@ -171,7 +172,22 @@ class CustomSongPicker:
             if result['acceptable']:
                 print("\nFinally! You picked an acceptable song.")
                 self.static_msgs.play_static_message("acceptable_song")
-                return result, song_details
+                
+                # Add confirmation step
+                confirmation = Confirmation()
+                confirmation_action = confirmation.confirm_song_choice(song_details)
+                
+                if confirmation_action == "confirmed":
+                    print("Song confirmed! Enjoy your music.")
+                    self.static_msgs.play_static_message("song_confirmed")
+                    return result, song_details
+                elif confirmation_action == "change_song":
+                    print("Let's choose a different song.")
+                    self.static_msgs.play_static_message("try_again")
+                    continue
+                else:  # cancel
+                    print("Song selection cancelled.")
+                    return None, None
             else:
                 print("Try again, oh master of terrible music choices.")
                 self.static_msgs.play_static_message("try_again")
@@ -186,7 +202,7 @@ if __name__ == "__main__":
     print(f"Lyrics: {song_details['lyrics_description']}")
     
     print("\nFinal result:")
-    print(json.dumps(final_result, indent=2))
+    # print(json.dumps(final_result, indent=2))
     
     # Save to MongoDB
     try:

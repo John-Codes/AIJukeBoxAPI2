@@ -126,7 +126,25 @@ def main():
         "roast_intro": "Prepare to be roasted!",
         "try_again": "Try again, oh master of terrible music choices.",
         "acceptable_song": "Finally! You picked an acceptable song.",
-        "offer": "I can play songs for you or make a song for your loved ones or yourself for just $1 each."
+        "confirm_prompt": "Do you confirm this song choice?",
+        "song_confirmed": "Song confirmed! Enjoy your music.",
+        "offer": "I can play songs for you or make a song for your loved ones or yourself for just $1 each.",
+        "pick_song": "Great! Let's pick a song for you.",
+        "create_custom_song": "Awesome! Let's create a custom song for you.",
+        "song_selection_cancelled": "Song selection was cancelled. Let's continue with the jokes.",
+        "song_selected_confirmed": "Your song has been selected and confirmed. Enjoy!",
+        "custom_song_selection_cancelled": "Song selection was cancelled. Let's continue with the jokes.",
+        "custom_song_selected_confirmed": "Your custom song has been selected and confirmed. Enjoy!",
+        "giving_up": "Giving up already? Typical.",
+        "silence_not_song": "Silence isn't a song, genius. Try again.",
+        "silence_not_song_custom": "Silence isn't a song, genius. Let's try again.",
+        "song_confirmed_enjoy": "Song confirmed! Enjoy your music.",
+        "pick_different_song": "Let's pick a different song.",
+        "pick_different_song_custom": "Let's choose a different song.",
+        "song_selection_cancelled_custom": "Song selection cancelled.",
+        "confirmation_low_confidence": "I didn't catch that. Please say yes to confirm, no to choose a different song, or cancel to exit.",
+        "confirmation_no_input": "I didn't hear anything. Please say yes to confirm, no to choose a different song, or cancel to exit.",
+        "confirmation_error": "There was an error processing your response. Please try again."
     }
     
     print("Creating and testing all static messages...")
