@@ -1,0 +1,8 @@
+integrate DB done
+
+integrate payments paypal
+
+Cheaper STT APIs
+Cheaper TTS apis?
+UI integration
+Spanish Integration

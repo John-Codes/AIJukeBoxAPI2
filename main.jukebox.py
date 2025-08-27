@@ -9,6 +9,10 @@ from json_parser import JSONResponseParser
 from static_messages import StaticMessages
 import re
 
+# Import the new classes
+from status import Status
+from song_player import SongPlayer
+
 from colorama import init, Fore, Style
 init(autoreset=True)  # Initialize colorama
 
@@ -33,6 +37,10 @@ class JukeboxJokeTeller:
         self.static_msgs = StaticMessages()
         self.joke_count = 0
         self.offer_frequency = 3  # Make an offer every 3 jokes
+        
+        # Initialize the new classes
+        self.status = Status()
+        self.song_player = SongPlayer(self.status)
     
     
     def validate_user_request(self, user_input):
@@ -121,6 +129,8 @@ class JukeboxJokeTeller:
                         else:
                             print("Song selected and confirmed!")
                             self.static_msgs.play_static_message("song_selected_confirmed")
+                            # Play the selected song using SongPlayer
+                            self.song_player.play_song(song_choice)
                     elif validation["type"] == "custom":
                         self.static_msgs.play_static_message("create_custom_song")
                         print(f"{CUSTOM_SONG_COLOR}Going to custom song picker...{RESET_COLOR}")
@@ -131,6 +141,8 @@ class JukeboxJokeTeller:
                         else:
                             print("Custom song selected and confirmed!")
                             self.static_msgs.play_static_message("custom_song_selected_confirmed")
+                            # Play the custom song using SongPlayer
+                            self.song_player.play_custom_song(song_details)
                 return True
             return False
         except Exception as e:
@@ -186,23 +198,26 @@ class JukeboxJokeTeller:
         # Main loop that alternates between listening and joke telling
         while True:
             try:
+                # Check if a song is currently playing
+                if self.status.playing_song or self.status.playing_custom_song:
+                    print("Song is currently playing. Waiting for it to finish...")
+                    time.sleep(2)  # Check every 2 seconds if song is still playing
+                    continue
+                
                 # Listen for user input
                 user_input_processed = self.listen_once()
                 
-               
-                # # If user input was processed, continue to next iteration
-                # if user_input_processed:
-                #     continue
+                # If user input was processed, continue to next iteration
+                if user_input_processed:
+                    continue
                 
                 # Tell a joke
                 joke = self.tell_joke()
                 print(f"Joke: {joke}")
                 speak_text(joke)
 
-
                 # Wait a few seconds for the joke audio to finish playing
                 time.sleep(5)
-
 
                 # Increment joke counter
                 self.joke_count += 1
@@ -216,9 +231,6 @@ class JukeboxJokeTeller:
                 # Wait before next cycle (random interval for natural feel)
                 wait_time = random.randint(8, 15)
                 time.sleep(wait_time)
-                 # If user input was processed, continue to next iteration
-                if user_input_processed:
-                    continue
             except Exception as e:
                 print(f"Error in main loop: {e}")
                 self.static_msgs.play_static_message("try_again")

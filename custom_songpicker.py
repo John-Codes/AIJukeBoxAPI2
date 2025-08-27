@@ -180,6 +180,8 @@ class CustomSongPicker:
                 if confirmation_action == "confirmed":
                     print("Song confirmed! Enjoy your music.")
                     self.static_msgs.play_static_message("song_confirmed")
+                    # Save to MongoDB
+                    self.save_to_mongo(song_details, result)
                     return result, song_details
                 elif confirmation_action == "change_song":
                     print("Let's choose a different song.")
@@ -191,6 +193,33 @@ class CustomSongPicker:
             else:
                 print("Try again, oh master of terrible music choices.")
                 self.static_msgs.play_static_message("try_again")
+
+    def save_to_mongo(self, song_details, result):
+        """
+        Save custom song data to MongoDB after confirmation.
+        
+        Args:
+            song_details (dict): Dictionary containing song_name, genre, styles, and lyrics_description
+            result (dict): The evaluation result from the LLM
+        """
+        try:
+            mongo_handler = MongoDBHandler()
+            song_data = {
+                "song_name": song_details['song_name'],
+                "genre": song_details['genre'],
+                "styles": song_details['styles'],
+                "lyrics_description": song_details['lyrics_description'],
+                "acceptable": result['acceptable'],
+                "roast": result['roast']
+            }
+            success = mongo_handler.insert_song_data(song_data)
+            if success:
+                print("\nSong data successfully saved to MongoDB!")
+            else:
+                print("\nFailed to save song data to MongoDB.")
+            mongo_handler.close_connection()
+        except Exception as e:
+            print(f"\nError saving to MongoDB: {e}")
 
 if __name__ == "__main__":
     # Create an instance of CustomSongPicker and run it
